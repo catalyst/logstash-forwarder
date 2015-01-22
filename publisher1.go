@@ -37,11 +37,22 @@ func Publishv1(input chan []*FileEvent,
 	var socket *tls.Conn
 	var sequence uint32
 	var err error
+	var reconnectTimer chan time.Time
 
 	socket = connect(config)
 	defer socket.Close()
 
+	reconnectTimer = time.After(time.Hour)
+
 	for events := range input {
+		// Reconnect on timer
+		select {
+		case <-reconnectTimer:
+			socket.Close()
+			socket = connect(config)
+			reconnectTimer = time.After(time.Hour)
+		default:
+		}
 		buffer.Truncate(0)
 		compressor, _ := zlib.NewWriterLevel(&buffer, 3)
 
@@ -135,7 +146,7 @@ func connect(config *NetworkConfig) (socket *tls.Conn) {
 			config.SSLCertificate, config.SSLKey)
 		cert, err := tls.LoadX509KeyPair(config.SSLCertificate, config.SSLKey)
 		if err != nil {
-			fault ("Failed loading client ssl certificate: %s\n", err)
+			fault("Failed loading client ssl certificate: %s\n", err)
 		}
 		tlsconfig.Certificates = []tls.Certificate{cert}
 	}
