@@ -58,9 +58,7 @@ module Lumberjack
           next
         end
 
-        Thread.new(client) do |fd|
-          Connection.new(fd).run(&block)
-        end
+        yield client
       end
     end # def run
   end # class Server
