@@ -192,7 +192,7 @@ module Lumberjack
       length = get.unpack("N").first
       transition(:compressed_payload, length)
     end
-    
+
     def compressed_payload(&block)
       original = Zlib::Inflate.inflate(get)
       transition(:header, 2)
